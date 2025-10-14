@@ -75,7 +75,7 @@ jobs:
     - name: Install Dependencies
       run: |
           sudo apt-get update
-          sudo apt-get install -y libglx-dev libgl1-mesa-dev flex bison gperf dos2unix flex bison gperf dos2unix cups libcups2-dev
+          sudo apt-get install -y libglx-dev libgl1-mesa-dev flex bison gperf dos2unix flex bison gperf dos2unix cups libcups2-dev libngspice0-dev
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 --slave /usr/bin/g++ g++ /usr/bin/g++-12
 
     - name: 'Install Qt6'
@@ -98,7 +98,8 @@ jobs:
           cmake -B ${{github.workspace}}/build -G 'Ninja' \
                 -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
                 -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/AppDir/usr \
-                -DCI_VERSION="${{env.VERSION}}"
+                -DCI_VERSION="${{env.VERSION}}" \
+                -DWITH_NGSPICE_SHARED=ON
 
     - name: 'Build'
       # Build your program with the given configuration
@@ -106,7 +107,12 @@ jobs:
           cmake --build ${{github.workspace}}/build -j`nproc` --config ${{env.BUILD_TYPE}}
           cmake --build ${{github.workspace}}/build --target install
 
-      
+    - name: 'Run Tests'
+      run: |
+          sudo apt-get install -y xvfb
+          cd ${{github.workspace}}/build
+          xvfb-run -a ctest --output-on-failure --verbose
+
     - name: 'Install linuxdeploy'
       run: |
           wget -q --tries=3 --wait=5 \
@@ -409,7 +415,7 @@ jobs:
         cache: true
         update: true
         install: bison flex dos2unix curl zip p7zip
-        pacboy: cmake:p gcc:p qt6-base:p qt6-tools:p qt6-svg:p make:p ninja:p python:p gperf:p github-cli:p qt6-charts:p
+        pacboy: cmake:p gcc:p qt6-base:p qt6-tools:p qt6-svg:p qt6-multimedia:p make:p ninja:p python:p gperf:p github-cli:p
 
 
     - name: Build project with CMake
